@@ -3,6 +3,7 @@ package gui;
 // DS and Logic imports
 import ds.MyLinkedList;
 import exceptions.EmptyQueueException;
+import exceptions.InvalidInputException; // Import the new exception
 import logic.QueueManager;
 import model.BankCustomer;
 import model.Patient;
@@ -194,38 +195,61 @@ public class MainFrame extends JFrame {
 
     /**
      * Action handler for the "Generate New Token" button.
-     * Reads form data, tells the manager to create a token, and updates the display.
+     * Reads form data, *validates* it, tells the manager to create a token,
+     * and updates the display.
      */
     private void generateToken() {
-        String name = customerNameField.getText();
-        String id = customerIdField.getText();
-        String detail = customerDetailField.getText();
+        // This entire method is now wrapped in a try-catch block
+        // to handle the new InvalidInputException
+        try {
+            String name = customerNameField.getText();
+            String id = customerIdField.getText();
+            String detail = customerDetailField.getText();
 
-        // Simple input validation
-        if (name.isEmpty() || id.isEmpty() || detail.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Please fill in all fields.", "Input Error", JOptionPane.ERROR_MESSAGE);
-            return;
+            // --- Input Validation ---
+
+            // Check if any field is empty
+            if (name.isEmpty() || id.isEmpty() || detail.isEmpty()) {
+                throw new InvalidInputException("Please fill in all fields.");
+            }
+            
+            // Check if name contains only letters and spaces
+            // This is a "regular expression"
+            if (!name.matches("[a-zA-Z\\s]+")) {
+                throw new InvalidInputException("Name must contain only letters and spaces.");
+            }
+            
+            // Check if ID/Phone contains only numbers
+            if (!id.matches("\\d+")) {
+                throw new InvalidInputException("ID / Phone must contain only numbers.");
+            }
+
+            // --- End Validation ---
+
+            // Create the correct Person object based on the appMode
+            Person person;
+            if (appMode.equals("Bank")) {
+                person = new BankCustomer(name, id, detail);
+            } else {
+                person = new Patient(name, id, detail);
+            }
+
+            // Tell the "Brain" to create the token
+            Token newToken = manager.generateNewToken(person);
+            JOptionPane.showMessageDialog(this, "Token Generated: " + newToken.getTokenNumber(), "Success", JOptionPane.INFORMATION_MESSAGE);
+            
+            clearInputFields();
+            updateDisplay(); // Refresh the screen
+
+        } catch (InvalidInputException e) {
+            // If any validation check fails, this block runs
+            JOptionPane.showMessageDialog(this, e.getMessage(), "Input Error", JOptionPane.ERROR_MESSAGE);
         }
-
-        // Create the correct Person object based on the appMode
-        Person person;
-        if (appMode.equals("Bank")) {
-            person = new BankCustomer(name, id, detail);
-        } else {
-            person = new Patient(name, id, detail);
-        }
-
-        // Tell the "Brain" to create the token
-        Token newToken = manager.generateNewToken(person);
-        JOptionPane.showMessageDialog(this, "Token Generated: " + newToken.getTokenNumber(), "Success", JOptionPane.INFORMATION_MESSAGE);
-        
-        clearInputFields();
-        updateDisplay(); // Refresh the screen
     }
 
     /**
      * Action handler for the "Serve Next Token" button.
-     * This is where we use our try-catch block for the custom exception.
+     * This is where we use our try-catch block for the EmptyQueueException.
      */
     private void serveNext() {
         try {
