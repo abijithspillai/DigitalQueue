@@ -3,7 +3,7 @@ package gui;
 // DS and Logic imports
 import ds.MyLinkedList;
 import exceptions.EmptyQueueException;
-import exceptions.InvalidInputException; // Import the new exception
+import exceptions.InvalidInputException; 
 import logic.QueueManager;
 import model.BankCustomer;
 import model.Patient;
